@@ -1,0 +1,16 @@
+
+# Files
+*.key
+*.jpg
+pywst_config
+tailwindcss*
+CSS/tin.css
+components/*.html
+components/r/*.html
+
+# Directories
+MinimalWall
+.idea
+
+# OS
+*.DS_Store

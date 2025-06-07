@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+		<link rel="stylesheet" type="text/css" href="CSS/tout.css">
+		<script src="index.js"></script>
+		<script src="components/r/signal_input.js"></script>
+
+		<title>
+			DFT
+		</title>
+	</head>
+	<body class="w-full h-dvh font-mono text-primary-0 dark:text-primary-1 bg-body-0 dark:bg-body-1">
+		<!--<div class="flex flex-col absolute w-full h-full blur-2xl -z-50">
+			<div class="w-full h-1/2 rounded-b-full bg-radial from-purple-500 to-indigo-500">
+			</div>
+			<div class="w-full h-1/2 rounded-t-full bg-radial from-purple-500 to-indigo-500">
+			</div>
+		</div>
+		<div class="flex flex-col absolute w-full h-full blur-2xl -z-50 bg-sidebar-1/50 hidden dark:block">
+		</div>-->
+
+
+		<div class="flex flex-col justify-between w-full h-full">
+			<div class="flex flex-col mt-4 mx-4">
+				<div class="flex justify-between">
+					<div class="flex space-x-4 self-center w-1/2 text-4xl font-bold">
+						<label id="title" for="dft-size" class="self-center">
+							DFT
+						</label>
+						<span class="self-center">
+							-
+						</span>
+						<input id="dft-size" pattern="[0-9]*" inputmode="numeric" type="number" placeholder="1" class="text-center w-14 h-full self-center bg-transparent">
+					</div>
+					<div class="flex space-x-4 self-center">
+						<button onclick="toggle_menu()" id="menu-button" class="flex justify-between p-2 w-20 rounded-lg self-center border">
+							<span id="active-mode" class="self-center">
+								DFT
+							</span>
+							<script src="svg/chevron_up_down.js" classData="self-center size-5"></script>
+						</button>
+						<div id="dft-menu" class="absolute flex flex-col w-20 p-2 space-y-4 rounded-b-lg border opacity-0 -translate-y-full transition-[translate, opacity] duration-250 shadow-lg bg-body-0 dark:bg-body-1">
+							<button onclick="calc_mode_is_dft(true)">
+								DFT
+							</button>
+							<button onclick="calc_mode_is_dft(false)">
+								iDFT
+							</button>
+						</div>
+
+						<button onclick="remove_all()" class="self-center">
+							<script src="svg/trash.js" classData="size-8"></script>
+						</button>
+						<button class="self-center">
+							<script src="svg/question_mark_circle.js" classData="size-8"></script>
+						</button>
+					</div>
+				</div>
+
+				<script onload="create_input()" defer src="components/signal.js" signal="x(n) =" signalName="xn" wrapperClass="flex flex-col space-y-2"></script>
+
+				<button id="start-button" class="mt-4 p-4 rounded-xl tracking-tight font-bold font-lg font-sans text-white bg-gradient-to-l from-violet-600 to-violet-700 dark:from-violet-800 dark:to-violet-600">
+					Calcular DFT-1
+				</button>
+			</div>
+
+			<div class="h-full m-4 p-4 rounded-xl bg-sidebar-0 dark:bg-sidebar-1">
+				<span class="text-xl font-bold">
+					Procedimiento
+				</span>
+			</div>
+
+			<script src="components/signal.js" signal="X(k) =" signalName="xk" wrapperClass="w-full p-4 rounded-t-xl bg-sidebar-0 dark:bg-sidebar-1"></script>
+		</div>
+
+		<div id="error-msg" class="hidden flex justify-between p-4 fixed bottom-0 w-full h-24 z-[100] bg-red-100 dark:bg-red-700">
+			<div class="flex flex-col w-[90%] overflow-y-scroll">
+				<span id="error-count" class="text-xl">
+					Error (1)
+				</span>
+				<span id="error-text">
+					Ocurrió un error
+				</span>
+			</div>
+			<button onclick="set_error_msg('')" class="m-2">
+				<script src="svg/x_mark.js" classData="size-8"></script>
+			</button>
+		</div>
+	</body>
+</html>
