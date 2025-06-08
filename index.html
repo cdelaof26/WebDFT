@@ -6,6 +6,12 @@
 		<link rel="stylesheet" type="text/css" href="CSS/tout.css">
 		<script src="index.js"></script>
 		<script src="components/r/signal_input.js"></script>
+		<script src="components/r/step_label.js"></script>
+
+		<!--<link rel="stylesheet" type="text/css" href="dft/katex.min.0.16.22.css">-->
+		<script defer src="dft/math.14.5.2.js"></script>
+		<!--<script defer src="dft/katex.min.0.16.22.js"></script>-->
+		<script src="dft/dft.js"></script>
 
 		<title>
 			DFT
@@ -61,21 +67,24 @@
 
 				<script onload="create_input()" defer src="components/signal.js" signal="x(n) =" signalName="xn" wrapperClass="flex flex-col space-y-2"></script>
 
-				<button id="start-button" class="mt-4 p-4 rounded-xl tracking-tight font-bold font-lg font-sans text-white bg-gradient-to-l from-violet-600 to-violet-700 dark:from-violet-800 dark:to-violet-600">
+				<button id="start-button" onclick="validate()" class="mt-4 p-4 rounded-xl tracking-tight font-bold font-lg font-sans text-white bg-gradient-to-l from-violet-600 to-violet-700 dark:from-violet-800 dark:to-violet-600">
 					Calcular DFT-1
 				</button>
 			</div>
 
-			<div class="h-full m-4 p-4 rounded-xl bg-sidebar-0 dark:bg-sidebar-1">
-				<span class="text-xl font-bold">
+			<div class="h-full m-4 rounded-xl overflow-y-auto bg-sidebar-0 dark:bg-sidebar-1">
+				<div class="sticky top-0 text-xl font-bold mx-4 p-4 font-sans rounded-b-lg bg-sidebar-0 dark:bg-sidebar-1">
 					Procedimiento
-				</span>
+				</div>
+				<div id="main-steps" class="flex flex-col mx-4 p-4 rounded-lg bg-body-0 dark:bg-body-1">
+
+				</div>
 			</div>
 
-			<script src="components/signal.js" signal="X(k) =" signalName="xk" wrapperClass="w-full p-4 rounded-t-xl bg-sidebar-0 dark:bg-sidebar-1"></script>
+			<script src="components/signal.js" signal="X(k) =" signalName="xk" wrapperClass="w-full p-4 rounded-t-2xl bg-sidebar-0 dark:bg-sidebar-1"></script>
 		</div>
 
-		<div id="error-msg" class="hidden flex justify-between p-4 fixed bottom-0 w-full h-24 z-[100] bg-red-100 dark:bg-red-700">
+		<div id="error-msg" class="translate-y-full transition-[translate] duration-250 flex justify-between p-4 rounded-t-2xl fixed bottom-0 left-0 w-full h-30 z-[100] bg-violet-700 dark:bg-violet-800 text-white">
 			<div class="flex flex-col w-[90%] overflow-y-scroll">
 				<span id="error-count" class="text-xl">
 					Error (1)

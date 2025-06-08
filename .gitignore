@@ -7,10 +7,12 @@ tailwindcss*
 CSS/tin.css
 components/*.html
 components/r/*.html
+svg/*.html
 
 # Directories
 MinimalWall
 .idea
+dft/katex*
 
 # OS
 *.DS_Store
