@@ -7,10 +7,11 @@
 		<script src="index.js"></script>
 		<script src="components/r/signal_input.js"></script>
 		<script src="components/r/step_label.js"></script>
+		<script src="components/r/matrix.js"></script>
 
-		<!--<link rel="stylesheet" type="text/css" href="dft/katex.min.0.16.22.css">-->
+		<link rel="stylesheet" type="text/css" href="dft/katex.min.0.16.22.css">
 		<script defer src="dft/math.14.5.2.js"></script>
-		<!--<script defer src="dft/katex.min.0.16.22.js"></script>-->
+		<script defer src="dft/katex.min.0.16.22.js"></script>
 		<script src="dft/dft.js"></script>
 
 		<title>
@@ -82,6 +83,43 @@
 			</div>
 
 			<script src="components/signal.js" signal="X(k) =" signalName="xk" wrapperClass="w-full p-4 rounded-t-2xl bg-sidebar-0 dark:bg-sidebar-1"></script>
+		</div>
+
+		<div id="instructive-view" class="opacity-0 -z-[100] transition-[opacity,z] duration-200 fixed p-4 top-0 font-sans w-full h-dvh bg-body-0 dark:bg-body-1">
+			<div class="flex mb-4">
+				<button class="self-center" onclick="close_instruction()">
+					<script src="svg/arrow_left.js" classData="size-10"></script>
+				</button>
+				<span id="instruction-title" class="self-center ps-3 font-bold text-3xl">
+
+				</span>
+			</div>
+			<div class="w-full h-3/4 overflow-x-scroll overflow-y-scroll">
+				<div id="instruction-body" class="w-full h-full">
+
+				</div>
+			</div>
+			<!--
+			<div class="fixed bottom-0 left-0 flex justify-between p-4 w-full bg-sidebar-0 dark:bg-sidebar-1">
+				<button class="self-center">
+					<script src="svg/arrow_left_circle.js" classData="size-12"></script>
+				</button>
+				<div class="self-center">
+					<label>
+						<input pattern="[0-9]*" inputmode="numeric" type="number" class="text-center w-14 h-full self-center bg-transparent">
+					</label>
+					<span>
+						/
+					</span>
+					<label>
+						<input id="total-steps" readonly type="number" class="text-center w-14 h-full self-center bg-transparent border-0">
+					</label>
+				</div>
+				<button class="self-center">
+					<script src="svg/arrow_right_circle.js" classData="size-12"></script>
+				</button>
+			</div>
+			-->
 		</div>
 
 		<div id="error-msg" class="translate-y-full transition-[translate] duration-250 flex justify-between p-4 rounded-t-2xl fixed bottom-0 left-0 w-full h-30 z-[100] bg-violet-700 dark:bg-violet-800 text-white">

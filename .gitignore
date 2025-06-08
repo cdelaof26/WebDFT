@@ -8,11 +8,12 @@ CSS/tin.css
 components/*.html
 components/r/*.html
 svg/*.html
+dft/katex.zip
 
 # Directories
 MinimalWall
 .idea
-dft/katex*
+dft/katex/
 
 # OS
 *.DS_Store

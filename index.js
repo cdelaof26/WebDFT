@@ -118,16 +118,21 @@ function create_input() {
     data.appendChild(label);
 }
 
-function clear_xk() {
-    const data = document.getElementById("xk-data");
+function clear_element(id) {
+    const data = document.getElementById(id);
+    if (data === null)
+        return;
+
     for (let i = data.children.length - 1; i > -1; i--)
         data.removeChild(data.children[i]);
 }
 
+function clear_xk() {
+    clear_element("xk-data");
+}
+
 function clear_step_log() {
-    const container = document.getElementById("main-steps");
-    for (let i = container.children.length - 1; i > -1; i--)
-        container.removeChild(container.children[i]);
+    clear_element("main-steps");
 }
 
 function remove_all() {
@@ -201,12 +206,15 @@ document.addEventListener("DOMContentLoaded", () => {
         user_defined_size = use_user_defined_size ? parseInt(text) : 0;
         update_dft_size(null);
     };
+
+    // Debug
+    // validate();
 });
 
-function push_step(text, class_data, icon, icon_class_data) {
-    document.getElementById("main-steps").appendChild(
-        step_label(text, class_data, icon, icon_class_data)
-    );
+function push_step(text, class_data, icon, icon_class_data, action) {
+    const element = step_label(text, class_data, icon, icon_class_data);
+    document.getElementById("main-steps").appendChild(element);
+    element.onclick = action;
 }
 
 function validate() {
@@ -232,4 +240,114 @@ function validate() {
     push_step("Validar tamaño datos", "font-bold", "check", "text-green-600 dark:text-lime-500");
 
     perform_operation();
+}
+
+function close_instruction() {
+    const container = document.getElementById("instructive-view");
+    toggle_class(true, container, "opacity-0", "-z-100");
+    toggle_class(false, container, "z-100");
+}
+
+function show_instruction() {
+    const container = document.getElementById("instructive-view");
+    toggle_class(false, container, "opacity-0", "-z-100");
+    toggle_class(true, container, "z-100");
+}
+
+function set_title(title) {
+    document.getElementById("instruction-title").textContent = title;
+}
+
+function append_to_instruction_body(clear, c) {
+    const body = document.getElementById("instruction-body");
+    if (clear)
+        clear_element("instruction-body");
+
+    body.appendChild(c);
+}
+
+function matrix_to_tex(data) {
+    let tex = "\\begin{pmatrix}\n";
+    for (let j = 0; j < data.length; j++) {
+        let l = [];
+        for (let i = 0; i < data.length; i++)
+            l.push(data[j][i].toTex());
+
+        tex += l.join(" & ") + "\\\\";
+    }
+
+    return tex + "\\end{pmatrix}";
+}
+
+function explain_matrix(m_data) {
+    show_instruction();
+    set_title("Matriz de Fourier");
+    const m = matrix(
+        "La matriz de Fourier se construye a partir de los factores de giro W. " +
+        "Los factores se consiguen a partir de las tres principales propiedades de estos."
+    );
+
+    const tex = "W_N = " + matrix_to_tex(m_data);
+
+    append_to_instruction_body(true, m);
+    katex.render(tex, m.children[0]);
+}
+
+function explain_matrix_multiplication(m_data, xn_data, xkn_base_tex_data, xkn_tex_data) {
+    show_instruction();
+    set_title("Multiplicación de matrices");
+    const m = matrix(
+        "La multiplicación se realiza columna por fila. " +
+        "Los valores Xk sin simplificar del todo se muestran a continuación."
+    );
+
+    let tex = matrix_to_tex(m_data);
+    tex += "\\begin{pmatrix}";
+
+    let l = [], l1 = [];
+    for (let i = 0; i < xn_data.length; i++) {
+        l.push(xn_data[i].toTex());
+        l1.push(`X(${i + 1})`);
+    }
+
+    tex += l.join(" \\\\ \n") + "\\end{pmatrix}";
+    tex += `= \\begin{pmatrix}${l1.join(" \\\\ \n")}\\end{pmatrix}`;
+
+    append_to_instruction_body(true, m);
+    katex.render(tex, m.children[0]);
+
+    const div = document.createElement("div");
+    toggle_class(true, div, "flex", "flex-col", "w-max");
+    m.appendChild(div);
+    xkn_tex_data.forEach((e, i) => {
+        const x = `X(${i})`;
+        const tex = `${x} = ${xkn_base_tex_data[i].join("+")} \\\\ ${"\\ ".repeat(x.length * 2 + x.length / 2)} = ${e}`;
+        const span = document.createElement("span");
+        div.appendChild(span);
+        katex.render(tex, span);
+    });
+}
+
+function explain_w_values(euler_data, cis_data, eval_data) {
+    show_instruction();
+    set_title("Valores W's");
+    const container = document.createElement("div");
+    toggle_class(true, container, "flex", "flex-col", "w-full");
+
+    const div = document.createElement("div");
+    toggle_class(true, div, "flex", "flex-col", "w-max");
+
+    const p = document.createElement("p");
+    p.textContent = "Los N/2 valores W se calculan a partir de la definición de Euler de número complejo.";
+    div.appendChild(p);
+
+    container.appendChild(div);
+    append_to_instruction_body(true, container);
+
+    euler_data.forEach((e, i) => {
+        const tex = `W^${i} = ${e} = ${cis_data[i]} = ${eval_data[i]}`;
+        const span = document.createElement("span");
+        div.appendChild(span);
+        katex.render(tex, span);
+    });
 }

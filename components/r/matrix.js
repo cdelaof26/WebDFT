@@ -1,0 +1,1 @@
+function matrix(text) {const e0 = document.createElement('div');e0.setAttribute('class', "flex flex-col space-y-4 w-full");const e1 = document.createElement('span');e1.setAttribute('class', "w-max");e0.appendChild(e1);const e2 = document.createElement('span');e2.setAttribute('class', "text-justify");e0.appendChild(e2);e2.appendChild(document.createTextNode(`${text}`));return e0;}
