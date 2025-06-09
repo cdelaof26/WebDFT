@@ -1,16 +1,18 @@
+let dft_data = [];
+let user_defined_size = 0;
 let dft_size = 0;
 let use_user_defined_size = false;
-let user_defined_size = 0;
 
 let calculate_dft = true;
 
-let dft_data = [];
 // let dft_data = ["3", "-1", "4", "10", "-13", "8", "-5", ""]; // Debug
-// let user_defined_size = dft_data.length; // Debug
+// let user_defined_size = dft_data.length + 10; // Debug
+// let dft_size = user_defined_size; // Debug
 // let use_user_defined_size = true; // Debug
 
 let error_times = 1;
 let menu_visible = false;
+let working = false;
 
 function toggle_class(add, element, ...classes) {
     if (typeof element === "string")
@@ -25,6 +27,14 @@ function toggle_class(add, element, ...classes) {
         else
             element.classList.remove(c);
     });
+}
+
+function toggle_start_button_state(enabled) {
+    const start = document.getElementById("start-button");
+
+    toggle_class(!enabled, start, "cursor-not-allowed", "text-dim-1");
+    toggle_class(enabled, start, "text-white");
+    start.disabled = !enabled;
 }
 
 function update_dft_size(increase) {
@@ -44,49 +54,47 @@ function update_dft_size(increase) {
 
     const start = document.getElementById("start-button");
     start.textContent = `Calcular ${name}-${s}`;
-    toggle_class(!calculate_dft, start, "cursor-not-allowed", "text-dim-1");
-    toggle_class(calculate_dft, start, "text-white");
-    start.disabled = !calculate_dft;
+    toggle_start_button_state(calculate_dft);
 }
 
 function create_input() {
-    const data = document.getElementById("xn-data");
-    const label = signal_input("");
-    const index = data.children.length;
+    const data_container = document.getElementById("xn-data");
+    const current_label = signal_input("");
+    const index = data_container.children.length;
 
-    label.text = () => label.children[0].value.trim();
-    label.has_text = () => label.text() !== "";
+    current_label.text = () => current_label.children[0].value.trim();
+    current_label.has_text = () => current_label.text() !== "";
 
-    label.self_remove_backwards = () => {
-        data.removeChild(label);
-        data.children[index - 1].has_created_a_child = false;
-        data.children[index - 1].children[0].focus();
+    current_label.self_remove_backwards = () => {
+        data_container.removeChild(current_label);
+        data_container.children[index - 1].has_created_a_child = false;
+        data_container.children[index - 1].children[0].focus();
         update_dft_size(false);
     };
 
-    label.self_remove_forward = () => {
-        if (index + 1 < data.children.length)
-            data.children[index + 1].self_remove_forward();
+    current_label.self_remove_forward = () => {
+        if (index + 1 < data_container.children.length)
+            data_container.children[index + 1].self_remove_forward();
 
-        if (label.has_text())
+        if (current_label.has_text())
             return;
 
-        data.removeChild(label);
-        data.children[index - 1].has_created_a_child = false;
-        data.children[index - 1].children[0].focus();
+        data_container.removeChild(current_label);
+        data_container.children[index - 1].has_created_a_child = false;
+        data_container.children[index - 1].children[0].focus();
         update_dft_size(false);
     };
 
-    label.has_created_a_child = false;
-    label.children[0].onkeyup = ({ key }) => {
-        const contains_text = label.has_text();
-        dft_data[index] = label.text();
-        label.children[0].style.width = (dft_data[index].length + 3) + 'ch';
+    current_label.has_created_a_child = false;
+    current_label.children[0].onkeyup = ({ key }) => {
+        const contains_text = current_label.has_text();
+        dft_data[index] = current_label.text();
+        current_label.children[0].style.width = (dft_data[index].length + 3) + 'ch';
 
         if (key === "Enter") {
             if (contains_text) {
-                if (label.has_created_a_child)
-                    data.children[index + 1].children[0].focus();
+                if (current_label.has_created_a_child)
+                    data_container.children[index + 1].children[0].focus();
             } else {
                 validate();
             }
@@ -96,26 +104,26 @@ function create_input() {
             if (index === 0)
                 return;
 
-            if (label.has_created_a_child) {
-                label.self_remove_forward();
+            if (current_label.has_created_a_child) {
+                current_label.self_remove_forward();
                 return;
             }
 
-            label.self_remove_backwards();
+            current_label.self_remove_backwards();
             return;
         }
 
-        if (label.has_created_a_child)
+        if (current_label.has_created_a_child)
             return;
 
         if (contains_text) {
-            label.has_created_a_child = true;
+            current_label.has_created_a_child = true;
             update_dft_size(true);
             create_input();
         }
     };
 
-    data.appendChild(label);
+    data_container.appendChild(current_label);
 }
 
 function clear_element(id) {
@@ -135,7 +143,12 @@ function clear_step_log() {
     clear_element("main-steps");
 }
 
-function remove_all() {
+function reset() {
+    if (working) {
+        set_error_msg("Para reiniciar la aplicación, primero debe terminar el proceso.");
+        return;
+    }
+
     const data = document.getElementById("xn-data");
     for (let i = data.children.length - 1; i > 0; i--)
         data.removeChild(data.children[i]);
@@ -147,7 +160,7 @@ function remove_all() {
     document.getElementById("dft-size").value = "";
 
     dft_data = [];
-    dft_size = 1;
+    dft_size = 0;
     data.children[0].children[0].value = "";
     data.children[0].has_created_a_child = false;
     calc_mode_is_dft(true);
@@ -184,6 +197,12 @@ function toggle_menu_visibility(show) {
 }
 
 function toggle_menu() {
+    if (working) {
+        set_error_msg(
+            "No se puede cambiar la operación mientras se procesa una señal."
+        );
+        return;
+    }
     toggle_menu_visibility(!menu_visible);
 }
 
@@ -212,12 +231,35 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function push_step(text, class_data, icon, icon_class_data, action) {
+    if (!icon_class_data.includes("size"))
+        icon_class_data += " size-6";
+
     const element = step_label(text, class_data, icon, icon_class_data);
     document.getElementById("main-steps").appendChild(element);
     element.onclick = action;
+    return element;
+}
+
+function show_result(xk) {
+    const data = document.getElementById("xk-data");
+    if (data === null)
+        return;
+
+    xk.forEach((r, i) => {
+        const label = signal_input(r, i + 1 === xk.length ? "hidden" : "");
+        label.children[0].disabled = true;
+        label.children[0].style.width = (r.length + 3) + 'ch';
+
+        data.appendChild(label);
+    });
 }
 
 function validate() {
+    if (working) {
+        set_error_msg("El app ya está en ejecución.");
+        return;
+    }
+
     clear_step_log();
     clear_xk();
 
@@ -232,14 +274,87 @@ function validate() {
     push_step("Leer datos", "font-bold", "check", "text-green-600 dark:text-lime-500");
 
     if (use_user_defined_size && user_defined_size < dft_size) {
-        push_step("Validar tamaño datos", "font-bold", "x_mark", "text-red-600");
+        push_step("Validar tamaño de los datos", "font-bold", "x_mark", "text-red-600");
         set_error_msg(`No es posible calcular una DFT-${user_defined_size} cuando se ingresaron ${dft_size} datos`);
         return;
     }
 
-    push_step("Validar tamaño datos", "font-bold", "check", "text-green-600 dark:text-lime-500");
+    push_step("Validar tamaño de los datos", "font-bold", "check", "text-green-600 dark:text-lime-500");
 
-    perform_operation();
+
+    const check_class = "text-green-600 dark:text-lime-500";
+    const explain_class = "self-center ps-2 mb-4 text-violet-700 dark:text-violet-300";
+    const explain_class_ico = "self-center ml-4 mb-4 size-4 text-violet-700 dark:text-violet-300";
+
+    toggle_class(false, "working-icon", "hidden");
+    toggle_start_button_state(false);
+
+    const w = new Worker("dft/dft.js");
+
+    let current_element;
+    w.addEventListener("message", e => {
+        if (e.data.type === "error") {
+            set_error_msg(e.data.msg);
+
+            toggle_class(true, "working-icon", "hidden");
+            toggle_start_button_state(true);
+            working = false;
+
+            if (current_element !== null) {
+                toggle_class(true, current_element, "hidden");
+                push_step(current_element.children[1].textContent, "font-bold", "x_mark", "text-red-600");
+            }
+
+        } else if (e.data.type === "internal") {
+            if (e.data.msg === "clear_error") {
+                set_error_msg("");
+            } else if (e.data.msg === "wn_data") {
+                push_step("Ver matriz...", explain_class, "book_open", explain_class_ico, () =>
+                    explain_matrix(e.data.value)
+                );
+
+            } else if (e.data.msg === "xkn_data") {
+                push_step("Ver X(k) sin simplificar...", explain_class, "book_open", explain_class_ico, () =>
+                    explain_matrix_multiplication(e.data.value)
+                );
+
+            } else if (e.data.msg === "ws_data") {
+                push_step("Ver valores...", explain_class, "book_open", explain_class_ico, () =>
+                    explain_w_values(e.data.value)
+                );
+
+            } else if (e.data.msg === "xk_data") {
+                show_result(e.data.value);
+
+                toggle_class(true, "working-icon", "hidden");
+                toggle_start_button_state(true);
+                working = false;
+            }
+
+        } else if (e.data.type === "progress") {
+            if (e.data.status === "failed") {
+                push_step(e.data.msg, "font-bold", "x_mark", "text-red-600");
+                set_error_msg(e.data.error);
+                if (current_element !== null)
+                    toggle_class(true, current_element, "hidden");
+                return;
+            } else if (e.data.status === "working") {
+                current_element = push_step(e.data.msg, "font-bold text-violet-700 dark:text-violet-300", "ring", "ml-4 size-4 fill-violet-800 dark:fill-white text-violet-400 animate-spin");
+                return;
+            }
+
+            if (current_element !== null)
+                toggle_class(true, current_element, "hidden");
+            push_step(e.data.msg, "font-bold", "check", check_class);
+        }
+    });
+
+    working = true;
+    w.postMessage({
+        operation: "start",
+        dft_data: dft_data, use_user_defined_size: use_user_defined_size,
+        user_defined_size: user_defined_size, calculate_dft: calculate_dft
+    });
 }
 
 function close_instruction() {
@@ -266,19 +381,6 @@ function append_to_instruction_body(clear, c) {
     body.appendChild(c);
 }
 
-function matrix_to_tex(data) {
-    let tex = "\\begin{pmatrix}\n";
-    for (let j = 0; j < data.length; j++) {
-        let l = [];
-        for (let i = 0; i < data.length; i++)
-            l.push(data[j][i].toTex());
-
-        tex += l.join(" & ") + "\\\\";
-    }
-
-    return tex + "\\end{pmatrix}";
-}
-
 function explain_matrix(m_data) {
     show_instruction();
     set_title("Matriz de Fourier");
@@ -287,13 +389,14 @@ function explain_matrix(m_data) {
         "Los factores se consiguen a partir de las tres principales propiedades de estos."
     );
 
-    const tex = "W_N = " + matrix_to_tex(m_data);
-
+    const tex = "W_N = " + m_data;
     append_to_instruction_body(true, m);
     katex.render(tex, m.children[0]);
 }
 
-function explain_matrix_multiplication(m_data, xn_data, xkn_base_tex_data, xkn_tex_data) {
+function explain_matrix_multiplication(data) {
+    const [m_data, xn_data, xkn_base_tex_data, xkn_tex_data] = data;
+
     show_instruction();
     set_title("Multiplicación de matrices");
     const m = matrix(
@@ -301,23 +404,21 @@ function explain_matrix_multiplication(m_data, xn_data, xkn_base_tex_data, xkn_t
         "Los valores Xk sin simplificar del todo se muestran a continuación."
     );
 
-    let tex = matrix_to_tex(m_data);
+    let tex = m_data;
     tex += "\\begin{pmatrix}";
 
-    let l = [], l1 = [];
-    for (let i = 0; i < xn_data.length; i++) {
-        l.push(xn_data[i].toTex());
+    let l1 = [];
+    for (let i = 0; i < xn_data.length; i++)
         l1.push(`X(${i + 1})`);
-    }
 
-    tex += l.join(" \\\\ \n") + "\\end{pmatrix}";
+    tex += xn_data.join(" \\\\ \n") + "\\end{pmatrix}";
     tex += `= \\begin{pmatrix}${l1.join(" \\\\ \n")}\\end{pmatrix}`;
 
     append_to_instruction_body(true, m);
     katex.render(tex, m.children[0]);
 
     const div = document.createElement("div");
-    toggle_class(true, div, "flex", "flex-col", "w-max");
+    toggle_class(true, div, "flex", "flex-col", "w-max", "space-y-4");
     m.appendChild(div);
     xkn_tex_data.forEach((e, i) => {
         const x = `X(${i})`;
@@ -328,14 +429,16 @@ function explain_matrix_multiplication(m_data, xn_data, xkn_base_tex_data, xkn_t
     });
 }
 
-function explain_w_values(euler_data, cis_data, eval_data) {
+function explain_w_values(data) {
+    const [euler_data, cis_data, eval_data] = data;
+
     show_instruction();
     set_title("Valores W's");
     const container = document.createElement("div");
     toggle_class(true, container, "flex", "flex-col", "w-full");
 
     const div = document.createElement("div");
-    toggle_class(true, div, "flex", "flex-col", "w-max");
+    toggle_class(true, div, "flex", "flex-col", "w-max", "space-y-4");
 
     const p = document.createElement("p");
     p.textContent = "Los N/2 valores W se calculan a partir de la definición de Euler de número complejo.";

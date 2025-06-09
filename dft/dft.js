@@ -1,13 +1,9 @@
+importScripts("math.14.5.2.js");
 
-let validate_check_index = -1;
-let xn = [];  // Input signal
-let ws = [];  // W values
-let wn = [];  // Fourier matrix
-let xkn = []; // X(k) not simplified
-let xk = [];
 
-function validate_input_data() {
-    validate_check_index = -1;
+function validate_input_data(dft_data) {
+    let validate_check_index = -1;
+    let xn = [];
     for (let i = 0; i < dft_data.length; i++) {
         dft_data[i] = dft_data[i].trim();
         if (!/^[\d.ji-]+$/g.test(dft_data[i])) {
@@ -16,12 +12,16 @@ function validate_input_data() {
             break;
         }
 
-        xn[i] = math.parse(dft_data[i].replaceAll(/j/g, "i"));
+        xn.push(math.parse(dft_data[i].replaceAll(/j/g, "i")));
         // console.log("xn", i, xn[i].toString(), "from", dft_data[i]);
     }
+
+    return [validate_check_index, xn];
 }
 
-function build_wn() {
+function build_wn(xn) {
+    const wn = [];
+
     const is_even = xn.length % 2 === 0;
     const semi_n = xn.length / 2;
     const r_semi_n = Math.ceil(xn.length / 2) + (is_even ? 1 : 0);
@@ -76,9 +76,13 @@ function build_wn() {
         wn.push(a);
         // console.log(a);
     }
+
+    return wn;
 }
 
-function multiply_wn_xn() {
+function multiply_wn_xn(xn, wn) {
+    const xkn = [];
+
     let tex = [];
     let base_tex = [];
 
@@ -106,10 +110,12 @@ function multiply_wn_xn() {
         // console.log("final", xkn[j].toString());
     }
 
-    return [base_tex, tex];
+    return [xkn, base_tex, tex];
 }
 
-function calculate_ws() {
+function calculate_ws(xn) {
+    const ws = [];
+
     // const is_even = xn.length % 2 === 0;
     const semi_n = xn.length / 2;
 
@@ -130,10 +136,10 @@ function calculate_ws() {
         tex_eval.push(ws[i].toString());
     }
 
-    return [tex_euler, tex_cis, tex_eval];
+    return [ws, tex_euler, tex_cis, tex_eval];
 }
 
-function evaluate_xkn() {
+function evaluate_xkn(ws, xkn) {
     /*
     let scope = {};
     for (let i = 1; i < ws.length; i++)
@@ -142,6 +148,8 @@ function evaluate_xkn() {
     for (let i = 0; i < xkn.length; i++)
         xkn[i] = math.simplify(xkn[i].toString(), scope);
     */
+
+    const xk = [];
 
     let scope = [];
     for (let i = 0; i < ws.length; i++)
@@ -154,84 +162,107 @@ function evaluate_xkn() {
         for (let j = ws.length - 1; j > -1; j--)
             xk[i] = xk[i].replaceAll(j !== 1 ? "W ^ " + j : "W", scope[j]);
 
-        xk[i] = math.evaluate(xk[i]);
+        xk[i] = math.format(math.evaluate(xk[i]), { notation: 'fixed', precision: 3 })
         // console.log(`X(${i}) =`, xk[i].toString());
     }
+
+    return xk;
 }
 
-function show_result() {
-    const data = document.getElementById("xk-data");
-    if (data === null)
-        return;
+function matrix_to_tex(data) {
+    let tex = "\\begin{pmatrix}\n";
+    for (let j = 0; j < data.length; j++) {
+        let l = [];
+        for (let i = 0; i < data.length; i++)
+            l.push(data[j][i].toTex());
 
-    xk.forEach(r => {
-        const text = math.format(r, { notation: 'fixed', precision: 3 });
-        const label = signal_input(text);
-        label.children[0].disabled = true;
-        label.children[0].style.width = (text.length + 3) + 'ch';
+        tex += l.join(" & ") + "\\\\";
+    }
 
-        data.appendChild(label);
-    });
+    return tex + "\\end{pmatrix}";
 }
 
-function perform_operation() {
+function perform_operation(
+    { dft_data, use_user_defined_size, user_defined_size, calculate_dft }
+) {
+    let validate_check_index = -1;
+
+    // Input signal in mathjs representation
+    let xn = [];
+
     if (!calculate_dft) {
-        set_error_msg("Función no implementada");
+        postMessage({ type: "error", msg: "Función no implementada" });
         return;
     }
 
-    set_error_msg("");
+    postMessage({ type: "internal", msg: "clear_error" });
+    postMessage({ type: "progress", msg: "Validar señal de entrada", status: "working" });
 
     try {
-        validate_input_data();
+        [validate_check_index, xn] = validate_input_data(dft_data);
         if (validate_check_index !== -1) {
-            push_step("Validar señal de entrada", "font-bold", "x_mark", "text-red-600");
-            set_error_msg(`El valor en la posición ${validate_check_index + 1} (${dft_data[validate_check_index]}) contiene cáracteres no validos`);
+            postMessage({
+                type: "progress", msg: "Validar señal de entrada", status: "failed",
+                error: `El valor en la posición ${validate_check_index + 1} (${dft_data[validate_check_index]}) contiene cáracteres no válidos`
+            });
             return;
         }
     } catch (e) {
-        push_step("Validar señal de entrada", "font-bold", "x_mark", "text-red-600");
-        set_error_msg(`El valor en la posición ${validate_check_index + 1} (${dft_data[validate_check_index]}) es inválido`);
+        postMessage({
+            type: "progress", msg: "Validar señal de entrada", status: "failed",
+            error: `El valor en la posición ${validate_check_index + 1} (${dft_data[validate_check_index]}) es inválido`
+        });
         return;
     }
-
-    ws = [];
-    wn = [];
-    xkn = [];
 
     if (use_user_defined_size) {
         while (xn.length < user_defined_size)
             xn.push(new math.ConstantNode(0));
     }
 
-    const check_class = "text-green-600 dark:text-lime-500";
-    const explain_class = "ps-4 mb-4 text-violet-700 dark:text-violet-300";
+    if (xn.length > 30) {
+        postMessage({ type: "error", msg: "No se puede calcular una DFT con más de 30 elementos" });
+        return;
+    }
 
-    push_step("Validar señal de entrada", "font-bold", "check", check_class);
+    const xn_tex = [];
+    xn.forEach(value => xn_tex.push(value.toTex()));
 
-    build_wn();
-    push_step("Construir matriz de Fourier", "font-bold", "check", check_class);
-    push_step("Ver matriz...", explain_class, "", "", () =>
-        explain_matrix(wn)
-    );
+    postMessage({ type: "progress", msg: "Validar señal de entrada", status: "succeeded" });
 
-    const [xkn_base_tex, xkn_tex] = multiply_wn_xn();
 
-    push_step("Multiplicar matrices", "font-bold", "check", check_class);
-    push_step("Ver X(k) sin simplificar...", explain_class, "", "", () =>
-        explain_matrix_multiplication(wn, xn, xkn_base_tex, xkn_tex)
-    );
+    postMessage({ type: "progress", msg: "Construir matriz de Fourier", status: "working" });
+    // Fourier matrix
+    const wn = build_wn(xn);
+    const wn_tex = matrix_to_tex(wn);
+    postMessage({ type: "progress", msg: "Construir matriz de Fourier", status: "succeeded" });
+    postMessage({ type: "internal", msg: "wn_data", value: wn_tex });
 
-    const [euler, cis, ev] = calculate_ws();
-    push_step("Calcular valores W", "font-bold", "check", check_class);
-    push_step("Ver valores...", explain_class, "", "", () =>
-        explain_w_values(euler, cis, ev)
-    );
 
-    evaluate_xkn();
-    push_step("Calcular resultado", "font-bold", "check", check_class);
-    // push_step("Ver pasos", "ps-4");
+    postMessage({ type: "progress", msg: "Multiplicar matrices", status: "working" });
+    // xkn is X(k) not simplified
+    const [xkn, xkn_base_tex, xkn_tex] = multiply_wn_xn(xn, wn);
+    postMessage({ type: "progress", msg: "Multiplicar matrices", status: "succeeded" });
+    postMessage({ type: "internal", msg: "xkn_data", value: [wn_tex, xn_tex, xkn_base_tex, xkn_tex] });
 
-    show_result();
+
+    postMessage({ type: "progress", msg: "Calcular valores W", status: "working" });
+    // ws is the W values
+    const [ws, euler, cis, ev] = calculate_ws(xn);
+    postMessage({ type: "progress", msg: "Calcular valores W", status: "succeeded" });
+    postMessage({ type: "internal", msg: "ws_data", value: [euler, cis, ev] });
+
+
+    postMessage({ type: "progress", msg: "Calcular resultado", status: "working" });
+    const xk = evaluate_xkn(ws, xkn);
+    postMessage({ type: "progress", msg: "Calcular resultado", status: "succeeded" });
+
+    postMessage({ type: "internal", msg: "xk_data", value: xk });
+    // show_result();
     // xn.forEach(e => console.log(e));
 }
+
+self.addEventListener("message", e => {
+    if (e.data.operation === "start")
+        perform_operation(e.data);
+});
