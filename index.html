@@ -58,7 +58,7 @@
 						<button onclick="reset()" class="self-center">
 							<script src="svg/trash.js" classData="size-8"></script>
 						</button>
-						<button class="self-center">
+						<button onclick="set_error_msg('No implementado')" class="self-center">
 							<script src="svg/question_mark_circle.js" classData="size-8"></script>
 						</button>
 					</div>
@@ -88,8 +88,8 @@
 			<script src="components/signal.js" signal="X(k) =" signalName="xk" wrapperClass="w-full p-4 rounded-t-2xl bg-sidebar-0 dark:bg-sidebar-1"></script>
 		</div>
 
-		<div id="instructive-view" class="opacity-0 -z-[100] transition-[opacity,z] duration-200 fixed p-4 top-0 font-sans w-full h-dvh bg-body-0 dark:bg-body-1">
-			<div class="flex mb-4">
+		<div id="instructive-view" class="opacity-0 -z-[100] transition-[opacity,z] duration-200 fixed py-4 top-0 font-sans w-full h-dvh bg-body-0 dark:bg-body-1">
+			<div class="px-4 pt-4 flex mb-4">
 				<button class="self-center" onclick="close_instruction()">
 					<script src="svg/arrow_left.js" classData="size-10"></script>
 				</button>
@@ -97,10 +97,8 @@
 
 				</span>
 			</div>
-			<div class="w-full h-[90%] overflow-x-scroll overflow-y-scroll">
-				<div id="instruction-body" class="w-full h-full">
+			<div id="instruction-body" class="w-full text-justify px-4 h-[85%] overflow-x-scroll overflow-y-scroll">
 
-				</div>
 			</div>
 			<!--
 			<div class="fixed bottom-0 left-0 flex justify-between p-4 w-full bg-sidebar-0 dark:bg-sidebar-1">
@@ -135,7 +133,7 @@
 				</span>
 			</div>
 			<button onclick="set_error_msg('')" class="m-2">
-				<script src="svg/x_mark.js" classData="size-8"></script>
+				<script src="svg/x_mark.js" classData="size-10"></script>
 			</button>
 		</div>
 	</body>

@@ -5,10 +5,12 @@ let use_user_defined_size = false;
 
 let calculate_dft = true;
 
-// let dft_data = ["3", "-1", "4", "10", "-13", "8", "-5", ""]; // Debug
-// let user_defined_size = dft_data.length + 10; // Debug
-// let dft_size = user_defined_size; // Debug
-// let use_user_defined_size = true; // Debug
+// Debug
+// let dft_data = ["3", "-1", "4", "10", "-13", "8", "-5", ""];
+// let user_defined_size = dft_data.length + 150;
+// let dft_size = user_defined_size;
+// let use_user_defined_size = true;
+// End debug values
 
 let error_times = 1;
 let menu_visible = false;
@@ -53,7 +55,7 @@ function update_dft_size(increase) {
     document.getElementById("title").textContent = name;
 
     const start = document.getElementById("start-button");
-    start.textContent = `Calcular ${name}-${s}`;
+    start.children[0].textContent = `Calcular ${name}-${s}`;
     toggle_start_button_state(calculate_dft);
 }
 
@@ -169,6 +171,9 @@ function reset() {
 }
 
 function set_error_msg(msg) {
+    if (msg === undefined)
+        return;
+
     const container = document.getElementById("error-msg");
     if (msg.length === 0) {
         error_times = 1;
@@ -392,6 +397,7 @@ function explain_matrix(m_data) {
     const tex = "W_N = " + m_data;
     append_to_instruction_body(true, m);
     katex.render(tex, m.children[0]);
+    toggle_class(true, m.children[0].children[0], "flex", "w-max");
 }
 
 function explain_matrix_multiplication(data) {
@@ -401,7 +407,7 @@ function explain_matrix_multiplication(data) {
     set_title("Multiplicación de matrices");
     const m = matrix(
         "La multiplicación se realiza columna por fila. " +
-        "Los valores Xk sin simplificar del todo se muestran a continuación."
+        "Los valores Xk sin sustituciones de W's se muestran a continuación."
     );
 
     let tex = m_data;
@@ -409,17 +415,23 @@ function explain_matrix_multiplication(data) {
 
     let l1 = [];
     for (let i = 0; i < xn_data.length; i++)
-        l1.push(`X(${i + 1})`);
+        l1.push(`X(${i})`);
 
     tex += xn_data.join(" \\\\ \n") + "\\end{pmatrix}";
     tex += `= \\begin{pmatrix}${l1.join(" \\\\ \n")}\\end{pmatrix}`;
 
     append_to_instruction_body(true, m);
     katex.render(tex, m.children[0]);
+    toggle_class(true, m.children[0].children[0], "flex", "w-max");
 
+    const container = document.createElement("div");
+    toggle_class(true, container, "w-full", "p-4", "overflow-x-scroll", "rounded-lg", "bg-sidebar-0", "dark:bg-sidebar-1");
     const div = document.createElement("div");
     toggle_class(true, div, "flex", "flex-col", "w-max", "space-y-4");
-    m.appendChild(div);
+
+    container.appendChild(div);
+    m.appendChild(container);
+
     xkn_tex_data.forEach((e, i) => {
         const x = `X(${i})`;
         const tex = `${x} = ${xkn_base_tex_data[i].join("+")} \\\\ ${"\\ ".repeat(x.length * 2 + x.length / 2)} = ${e}`;
@@ -435,20 +447,20 @@ function explain_w_values(data) {
     show_instruction();
     set_title("Valores W's");
     const container = document.createElement("div");
-    toggle_class(true, container, "flex", "flex-col", "w-full");
+    toggle_class(true, container, "w-full", "p-4", "overflow-x-scroll", "rounded-lg", "bg-sidebar-0", "dark:bg-sidebar-1");
 
     const div = document.createElement("div");
     toggle_class(true, div, "flex", "flex-col", "w-max", "space-y-4");
 
     const p = document.createElement("p");
     p.textContent = "Los N/2 valores W se calculan a partir de la definición de Euler de número complejo.";
-    div.appendChild(p);
 
     container.appendChild(div);
-    append_to_instruction_body(true, container);
+    append_to_instruction_body(true, p);
+    append_to_instruction_body(false, container);
 
     euler_data.forEach((e, i) => {
-        const tex = `W^${i} = ${e} = ${cis_data[i]} = ${eval_data[i]}`;
+        const tex = `W^{${i}} = ${e} = ${cis_data[i]} = ${eval_data[i]}`;
         const span = document.createElement("span");
         div.appendChild(span);
         katex.render(tex, span);

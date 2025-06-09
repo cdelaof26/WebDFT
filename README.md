@@ -6,10 +6,16 @@ Mobile web app to calculate DFT and iDFT with directions.
 
 Licensed under the [MIT License](LICENSE). Copyright 2025 @cdelaof26.
 
-_MIT License only applies to WebDFT v0.0.4 or newer._
+_MIT License only applies to WebDFT v0.0.4 and newer._
 
 
 ### Versioning
+
+#### v0.0.5 DFT logic improvements
+- Improved `X(k)` polynomial simplification by 
+  using nicolewhite's [algebra.js](https://github.com/nicolewhite/algebra.js)
+- Updated limit to `DFT-200`
+- Improved directions screen design
 
 #### v0.0.4 Improvements
 - Moved DFT logic over a worker

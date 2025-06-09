@@ -1,4 +1,5 @@
 importScripts("math.14.5.2.js");
+importScripts("algebra-0.2.6.min.js");
 
 
 function validate_input_data(dft_data) {
@@ -12,41 +13,49 @@ function validate_input_data(dft_data) {
             break;
         }
 
-        xn.push(math.parse(dft_data[i].replaceAll(/j/g, "i")));
+        xn.push(math.parse(dft_data[i].replaceAll(/j/g, "i")).toString());
         // console.log("xn", i, xn[i].toString(), "from", dft_data[i]);
     }
 
     return [validate_check_index, xn];
 }
 
-function build_wn(xn) {
+function build_wn(xn_length) {
     const wn = [];
+    let tex = "\\begin{pmatrix}\n";
+    let tex_matrix = [];
 
-    const is_even = xn.length % 2 === 0;
-    const semi_n = xn.length / 2;
-    const r_semi_n = Math.ceil(xn.length / 2) + (is_even ? 1 : 0);
+    const is_even = xn_length % 2 === 0;
+    const semi_n = xn_length / 2;
+    const r_semi_n = Math.ceil(xn_length / 2) + (is_even ? 1 : 0);
 
     for (let j = 0; j < r_semi_n; j++) {
         let negative = false;
         let exp = j;
-        let a = [];
 
-        for (let i = 0; i < xn.length; i++) {
+        const row = [];
+        const tex_row = [];
+
+        for (let i = 0; i < xn_length; i++) {
             if (j === 0 || i === 0) {
-                a.push(new math.ConstantNode(1));
+                row.push("1");
+                tex_row.push("1");
                 continue;
             }
 
             if (is_even && j === semi_n) {
                 negative = !negative;
-                a.push(new math.ConstantNode(negative ? -1 : 1));
+                const v = "" + (negative ? -1 : 1);
+                row.push(v);
+                tex_row.push(v);
                 continue;
             }
 
-            if (exp !== 0) {
-                a.push(math.parse(`${negative ? '-' : ''}W^${exp}`));
-            } else
-                a.push(new math.ConstantNode(negative ? -1 : 1));
+            const v = exp !== 0 ? math.parse(`${negative ? '-' : ''}W^${exp}`) :
+                "" + (negative ? -1 : 1);
+
+            row.push(v.toString());
+            tex_row.push(typeof v === "string" ? v : v.toTex());
 
             exp += j;
             if (exp > semi_n) {
@@ -55,29 +64,35 @@ function build_wn(xn) {
             }
         }
 
-        wn.push(a);
+        wn.push(row);
+        tex_matrix.push(tex_row);
+        tex += tex_row.join(" & ") + "\\\\";
         // console.log(a);
     }
 
     let previous_column = r_semi_n - 1 - (is_even ? 1 : 0);
-    for (let j = r_semi_n; j < xn.length; j++) {
-        let a = [];
+    for (let j = r_semi_n; j < xn_length; j++) {
+        const row = [];
+        const tex_row = [];
 
-        for (let i = 0; i < xn.length; i++) {
+        for (let i = 0; i < xn_length; i++) {
             if (i === 0) {
-                a.push(new math.ConstantNode(1));
+                row.push("1");
+                tex_row.push("1");
                 continue;
             }
 
-            a.push(wn[previous_column][xn.length - i]);
+            row.push(wn[previous_column][xn_length - i]);
+            tex_row.push(tex_matrix[previous_column][xn_length - i]);
         }
 
         previous_column--;
-        wn.push(a);
+        wn.push(row);
+        tex += tex_row.join(" & ") + "\\\\";
         // console.log(a);
     }
 
-    return wn;
+    return [wn, tex + "\\end{pmatrix}"];
 }
 
 function multiply_wn_xn(xn, wn) {
@@ -89,23 +104,18 @@ function multiply_wn_xn(xn, wn) {
     for (let j = 0; j < xn.length; j++) {
         const base = [];
         for (let i = 0; i < xn.length; i++) {
-            const multiplication = new math.OperatorNode(
-                "*", "multiply", [xn[i], wn[j][i]]
-            );
+            const multiplication = new algebra.parse(xn[i])
+                .multiply(new algebra.parse(wn[j][i]));
 
             base.push(multiplication.toTex());
 
             if (i === 0)
                 xkn[j] = multiplication;
             else
-                xkn[j] = new math.OperatorNode(
-                    "+", "add", [xkn[j], multiplication]
-                );
-
+                xkn[j] = xkn[j].add(multiplication);
         }
 
         base_tex.push(base);
-        xkn[j] = math.simplify(xkn[j]);
         tex[j] = xkn[j].toTex();
         // console.log("final", xkn[j].toString());
     }
@@ -113,11 +123,11 @@ function multiply_wn_xn(xn, wn) {
     return [xkn, base_tex, tex];
 }
 
-function calculate_ws(xn) {
+function calculate_ws(xn_length) {
     const ws = [];
 
-    // const is_even = xn.length % 2 === 0;
-    const semi_n = xn.length / 2;
+    // const is_even = xn_length % 2 === 0;
+    const semi_n = xn_length / 2;
 
     const tex_euler = [];
     const tex_cis = [];
@@ -125,14 +135,14 @@ function calculate_ws(xn) {
 
     for (let i = 0; i < semi_n; i++) {
         // w = e^(-i*2pi/N) = cis(2pi/N)
-        const cos = `cos(2*pi*${i}/${xn.length})`;
-        const sin = `-sin(2*pi*${i}/${xn.length})`;
+        const cos = `cos(2*pi*${i}/${xn_length})`;
+        const sin = `-sin(2*pi*${i}/${xn_length})`;
         const cos_eval = math.evaluate(cos);
         const sin_eval = math.evaluate(sin);
 
         ws[i] = math.complex(cos_eval, sin_eval);
-        tex_euler.push(`e^{-i\\frac{2\\pi}{${xn.length}}${i}}`);
-        tex_cis.push(`cos(\\frac{${i} \\cdot 2\\pi}{${xn.length}}) - isin(\\frac{${i} \\cdot 2\\pi}{${xn.length}})`);
+        tex_euler.push(`e^{-i\\frac{2\\pi}{${xn_length}}${i}}`);
+        tex_cis.push(`cos(\\frac{${i} \\cdot 2\\pi}{${xn_length}}) - isin(\\frac{${i} \\cdot 2\\pi}{${xn_length}})`);
         tex_eval.push(ws[i].toString());
     }
 
@@ -167,19 +177,6 @@ function evaluate_xkn(ws, xkn) {
     }
 
     return xk;
-}
-
-function matrix_to_tex(data) {
-    let tex = "\\begin{pmatrix}\n";
-    for (let j = 0; j < data.length; j++) {
-        let l = [];
-        for (let i = 0; i < data.length; i++)
-            l.push(data[j][i].toTex());
-
-        tex += l.join(" & ") + "\\\\";
-    }
-
-    return tex + "\\end{pmatrix}";
 }
 
 function perform_operation(
@@ -217,47 +214,57 @@ function perform_operation(
 
     if (use_user_defined_size) {
         while (xn.length < user_defined_size)
-            xn.push(new math.ConstantNode(0));
+            xn.push("0");
     }
 
-    if (xn.length > 30) {
-        postMessage({ type: "error", msg: "No se puede calcular una DFT con más de 30 elementos" });
+    if (xn.length > 200) {
+        postMessage({ type: "error", msg: "No se puede calcular una DFT con más de 200 elementos" });
         return;
     }
-
-    const xn_tex = [];
-    xn.forEach(value => xn_tex.push(value.toTex()));
 
     postMessage({ type: "progress", msg: "Validar señal de entrada", status: "succeeded" });
 
 
     postMessage({ type: "progress", msg: "Construir matriz de Fourier", status: "working" });
     // Fourier matrix
-    const wn = build_wn(xn);
-    const wn_tex = matrix_to_tex(wn);
+    const [wn, wn_tex] = build_wn(xn.length);
     postMessage({ type: "progress", msg: "Construir matriz de Fourier", status: "succeeded" });
-    postMessage({ type: "internal", msg: "wn_data", value: wn_tex });
+    if (xn.length < 51)
+        postMessage({ type: "internal", msg: "wn_data", value: wn_tex });
+    else
+        postMessage({ type: "progress", msg: "Mostrar matriz", status: "failed" });
+
 
 
     postMessage({ type: "progress", msg: "Multiplicar matrices", status: "working" });
     // xkn is X(k) not simplified
     const [xkn, xkn_base_tex, xkn_tex] = multiply_wn_xn(xn, wn);
     postMessage({ type: "progress", msg: "Multiplicar matrices", status: "succeeded" });
-    postMessage({ type: "internal", msg: "xkn_data", value: [wn_tex, xn_tex, xkn_base_tex, xkn_tex] });
+    if (xn.length < 31)
+        postMessage({ type: "internal", msg: "xkn_data", value: [wn_tex, xn, xkn_base_tex, xkn_tex] });
+    else
+        postMessage({ type: "progress", msg: "Mostrar X(k) sin sustituciones", status: "failed" });
 
 
     postMessage({ type: "progress", msg: "Calcular valores W", status: "working" });
     // ws is the W values
-    const [ws, euler, cis, ev] = calculate_ws(xn);
+    const [ws, euler, cis, ev] = calculate_ws(xn.length);
     postMessage({ type: "progress", msg: "Calcular valores W", status: "succeeded" });
     postMessage({ type: "internal", msg: "ws_data", value: [euler, cis, ev] });
 
 
     postMessage({ type: "progress", msg: "Calcular resultado", status: "working" });
-    const xk = evaluate_xkn(ws, xkn);
-    postMessage({ type: "progress", msg: "Calcular resultado", status: "succeeded" });
+    let xk = null;
+    try {
+        xk = evaluate_xkn(ws, xkn);
+        postMessage({ type: "progress", msg: "Calcular resultado", status: "succeeded" });
+    } catch (e) {
+        postMessage({ type: "progress", msg: "Calcular resultado", status: "failed" });
+        return;
+    }
 
     postMessage({ type: "internal", msg: "xk_data", value: xk });
+
     // show_result();
     // xn.forEach(e => console.log(e));
 }
